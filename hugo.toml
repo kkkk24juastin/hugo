@@ -1,52 +1,87 @@
-# Hugo 配置文件
-baseURL = "https://yourusername.github.io/"
+# Hugo 配置文件 - PaperMod 主题完整配置
+# 官方文档: https://github.com/adityatelange/hugo-PaperMod/wiki
+# 站点地址: https://blog.kkkk24juastin.asia/
+
+baseURL = "https://blog.kkkk24juastin.asia/"
 languageCode = "zh-cn"
-title = "我的Hugo博客"
+title = "Kkkk24 的博客"
 theme = "PaperMod"
 
-# 启用emoji支持
-enableEmoji = true
+# 分页设置
+[pagination]
+  pagerSize = 5
 
-# 启用Git信息
+# 启用功能
+enableRobotsTXT = true
+buildDrafts = false
+buildFuture = false
+buildExpired = false
+enableEmoji = true
 enableGitInfo = true
 
-# 分页设置 (Hugo 0.128.0+ 使用新语法)
-[pagination]
-  pagerSize = 10
+# 最小化设置
+[minify]
+  disableXML = true
+  minifyOutput = true
 
-# 构建设置
-[build]
-  writeStats = true
+# 输出格式（搜索功能需要JSON输出）
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
 
 # 菜单配置
 [menu]
   [[menu.main]]
     identifier = "home"
-    name = "首页"
+    name = "🏠 首页"
     url = "/"
     weight = 1
   [[menu.main]]
     identifier = "archives"
-    name = "归档"
+    name = "📚 归档"
     url = "/archives/"
     weight = 2
   [[menu.main]]
-    identifier = "tags"
-    name = "标签"
-    url = "/tags/"
+    identifier = "categories"
+    name = "📂 分类"
+    url = "/categories/"
     weight = 3
   [[menu.main]]
-    identifier = "about"
-    name = "关于"
-    url = "/about/"
+    identifier = "tags"
+    name = "🏷️ 标签"
+    url = "/tags/"
     weight = 4
+  [[menu.main]]
+    identifier = "search"
+    name = "🔍 搜索"
+    url = "/search/"
+    weight = 5
+  [[menu.main]]
+    identifier = "about"
+    name = "👤 关于"
+    url = "/about/"
+    weight = 6
 
-# PaperMod 主题参数
+# 站点参数
 [params]
-  env = "production"
-  description = "这是我的个人博客"
-  author = "Your Name"
-  defaultTheme = "auto"
+  # ===== 基本设置 =====
+  env = "production"  # 启用 Google Analytics, OpenGraph, Twitter Cards 和 Schema
+  title = "Kkkk24 的博客"
+  description = "Kkkk24 的个人博客 - 技术分享与生活记录"
+  keywords = ["博客", "Hugo", "技术", "编程", "Kkkk24"]
+  author = "Kkkk24"
+  # author = ["Me", "You"]  # 多作者
+  
+  # OpenGraph / Twitter Cards 使用的图片
+  # images = ["cover.png"]
+  
+  # 日期格式 - 参考 https://gohugo.io/functions/time/format/
+  DateFormat = "2006-01-02"
+  
+  # ===== 主题设置 =====
+  defaultTheme = "auto"  # dark, light, auto
+  disableThemeToggle = false
+  
+  # ===== 显示设置 =====
   ShowReadingTime = true
   ShowShareButtons = true
   ShowPostNavLinks = true
@@ -54,34 +89,170 @@ enableGitInfo = true
   ShowCodeCopyButtons = true
   ShowWordCount = true
   ShowRssButtonInSectionTermList = true
+  ShowAllPagesInArchive = true
+  ShowPageNums = true
+  ShowToc = true
   UseHugoToc = true
+  
   disableSpecial1stPost = false
   disableScrollToTop = false
+  disableAnchoredHeadings = false
+  
+  # 评论（需要配置评论系统）
   comments = false
+  
+  # 隐藏设置
   hidemeta = false
   hideSummary = false
+  hideFooter = false
+  
+  # 目录设置
   showtoc = true
   tocopen = false
-
+  
+  # 主要文章来源目录
+  mainSections = ["posts"]
+  
+  # ===== 首页信息模式 (Home-Info Mode) =====
   [params.homeInfoParams]
-    Title = "欢迎来到我的博客"
-    Content = "这是一个使用Hugo和PaperMod主题搭建的博客"
+    Title = "👋 Hi there, 欢迎来到 Kkkk24 的博客"
+    Content = """
+欢迎访问我的个人博客！这里记录技术笔记、学习心得和生活感悟。
 
+- 🔭 正在学习和探索新技术
+- 📝 定期分享技术文章
+- 💬 欢迎交流讨论
+"""
+
+  # ===== 社交图标 =====
   [[params.socialIcons]]
     name = "github"
-    url = "https://github.com/yourusername"
+    url = "https://github.com/kkkk24"
+  
+  [[params.socialIcons]]
+    name = "email"
+    url = "mailto:contact@kkkk24juastin.asia"
+  
+  [[params.socialIcons]]
+    name = "rss"
+    url = "/index.xml"
 
-# 输出格式
-[outputs]
-  home = ["HTML", "RSS", "JSON"]
+  # 可用的社交图标: https://github.com/adityatelange/hugo-PaperMod/wiki/Icons
+  # 常用: github, twitter, x, linkedin, facebook, instagram, youtube, telegram, discord, email, rss
 
-# Markdown 渲染设置
+  # ===== Profile Mode (可选，与 Home-Info Mode 二选一) =====
+  # [params.profileMode]
+  #   enabled = false
+  #   title = "Kkkk24"
+  #   subtitle = "技术分享与生活记录"
+  #   imageUrl = "<img location>"
+  #   imageWidth = 120
+  #   imageHeight = 120
+  #   imageTitle = "my image"
+  #   [[params.profileMode.buttons]]
+  #     name = "Posts"
+  #     url = "posts"
+  #   [[params.profileMode.buttons]]
+  #     name = "Tags"
+  #     url = "tags"
+
+  # ===== 搜索设置 (Fuse.js) =====
+  [params.fuseOpts]
+    isCaseSensitive = false
+    shouldSort = true
+    location = 0
+    distance = 1000
+    threshold = 0.4
+    minMatchCharLength = 0
+    limit = 10
+    keys = ["title", "permalink", "summary", "content"]
+
+  # ===== 资源设置 =====
+  [params.assets]
+    # disableHLJS = true  # 禁用 Highlight.js 使用 Hugo 的 Chroma
+    disableFingerprinting = false
+    # favicon = "<link / abs url>"
+    # favicon16x16 = "<link / abs url>"
+    # favicon32x32 = "<link / abs url>"
+    # apple_touch_icon = "<link / abs url>"
+    # safari_pinned_tab = "<link / abs url>"
+
+  # ===== 标签设置 =====
+  [params.label]
+    text = "Kkkk24 的博客"
+    # icon = "/apple-touch-icon.png"
+    iconHeight = 35
+
+  # ===== 封面设置 =====
+  [params.cover]
+    hidden = false  # 隐藏但保留在结构化数据中
+    hiddenInList = false  # 在列表页隐藏
+    hiddenInSingle = false  # 在文章页隐藏
+    linkFullImages = true  # 点击封面查看大图
+    responsiveImages = true  # 生成响应式图片
+
+  # ===== 编辑链接 =====
+  [params.editPost]
+    URL = "https://github.com/kkkk24/hugo/edit/main/content"
+    Text = "建议修改"
+    appendFilePath = true
+
+  # ===== 分析/验证 =====
+  # [params.analytics.google]
+  #   SiteVerificationTag = "XYZabc"
+  # [params.analytics.bing]
+  #   SiteVerificationTag = "XYZabc"
+  # [params.analytics.yandex]
+  #   SiteVerificationTag = "XYZabc"
+
+  # ===== Schema 设置 =====
+  # [params.schema]
+  #   publisherType = "Person"
+  #   sameAs = ["https://github.com/kkkk24"]
+
+# ===== Markdown 渲染设置 =====
+# 使用 Hugo 的 Chroma 语法高亮
+pygmentsUseClasses = true
+
 [markup]
   [markup.highlight]
+    anchorLineNos = false
     codeFences = true
     guessSyntax = true
-    lineNos = true
+    hl_Lines = ""
+    hl_inline = false
+    lineAnchors = ""
+    lineNoStart = 1
+    lineNos = false
+    lineNumbersInTable = true
+    noClasses = false  # 使用 CSS 类，便于主题切换
+    noHl = false
     style = "monokai"
+    tabWidth = 4
+  
   [markup.goldmark]
     [markup.goldmark.renderer]
-      unsafe = true
+      unsafe = true  # 允许 HTML
+
+# ===== 隐私设置 =====
+[privacy]
+  [privacy.vimeo]
+    disabled = false
+    simple = true
+  [privacy.twitter]
+    disabled = false
+    enableDNT = true
+    simple = true
+  [privacy.instagram]
+    disabled = false
+    simple = true
+  [privacy.youtube]
+    disabled = false
+    privacyEnhanced = true
+
+# ===== 服务设置 =====
+[services]
+  [services.instagram]
+    disableInlineCSS = true
+  [services.twitter]
+    disableInlineCSS = true

@@ -1,0 +1,53 @@
+/* 自定义 CSS 扩展文件
+ * 此文件会被自动捆绑到主题的 CSS 中
+ * 文档: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#bundling-custom-css-with-themes-assets
+ */
+
+/* 修复使用 Hugo Chroma 语法高亮时的背景色问题 */
+.chroma {
+  background-color: unset;
+}
+
+/* 自定义链接样式 */
+.post-content a {
+  color: var(--primary);
+}
+
+.post-content a:hover {
+  text-decoration: underline;
+}
+
+/* 自定义代码块样式 */
+.post-content pre {
+  border-radius: 8px;
+}
+
+/* 自定义引用块样式 */
+.post-content blockquote {
+  border-left: 4px solid var(--primary);
+  padding-left: 1rem;
+  font-style: italic;
+}
+
+/* 自定义表格样式 */
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.post-content table th,
+.post-content table td {
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+}
+
+.post-content table th {
+  background-color: var(--code-bg);
+}
+
+/* 自定义图片居中 */
+.post-content img[src$='#center'] {
+  display: block;
+  margin: 0 auto;
+}
