@@ -1,6 +1,8 @@
-# 我的Hugo博客
+# Kkkk24 的博客
 
 这是一个使用 [Hugo](https://gohugo.io/) 静态网站生成器和 [PaperMod](https://github.com/adityatelange/hugo-PaperMod) 主题搭建的个人博客。
+
+🌐 **博客地址**: https://blog.kkkk24juastin.asia/
 
 采用 GitHub Actions 自动编译生成静态文件，供服务器拉取部署。
 
@@ -41,34 +43,22 @@
 ### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/yourusername/hugo-blog.git
-cd hugo-blog
+git clone https://github.com/kkkk24/hugo.git
+cd hugo
 
 # 初始化 submodule（获取主题）
 git submodule update --init --recursive
 ```
 
-### 2. 修改配置
-
-编辑 `hugo.toml` 文件：
-
-- `baseURL`: 修改为你的博客实际访问地址
-- `title`: 博客标题
-- `params.author`: 作者名称
-- `params.description`: 博客描述
-- `params.socialIcons`: 社交媒体链接
-- `params.editPost.URL`: 修改为你的仓库地址
-
-### 3. 推送到 GitHub
+### 2. 推送更改
 
 ```bash
 git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/yourusername/hugo-blog.git
-git push -u origin main
+git commit -m "Update content"
+git push
 ```
 
-### 4. 自动编译
+### 3. 自动编译
 
 推送到 `main` 分支后，GitHub Actions 会自动：
 1. 使用 Hugo 0.155.2 编译生成静态文件
@@ -81,7 +71,7 @@ git push -u origin main
 
 ```bash
 # 首次克隆
-git clone --branch gh-pages --single-branch https://github.com/yourusername/hugo-blog.git /var/www/blog
+git clone --branch gh-pages --single-branch https://github.com/kkkk24/hugo.git /var/www/blog
 
 # 后续更新
 cd /var/www/blog && git pull
@@ -90,10 +80,6 @@ cd /var/www/blog && git pull
 ### 方法二：使用 Webhook 自动更新
 
 配置 GitHub Webhook，当 `gh-pages` 分支更新时自动触发服务器拉取。
-
-### 方法三：下载 Artifact
-
-在 GitHub Actions 页面下载最新的 `hugo-site` artifact，解压到服务器。
 
 ## ✍️ 写新文章
 
@@ -118,7 +104,7 @@ draft: false                    # 是否为草稿
 weight: 1                       # 置顶权重
 tags: ["标签1", "标签2"]
 categories: ["分类"]
-author: ["作者名"]
+author: ["Kkkk24"]
 description: "文章描述"
 showToc: true                   # 显示目录
 TocOpen: false                  # 目录默认展开
