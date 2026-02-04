@@ -1,0 +1,86 @@
+# Hugo 配置文件
+baseURL = "https://yourusername.github.io/"
+languageCode = "zh-cn"
+title = "我的Hugo博客"
+theme = "PaperMod"
+
+# 启用emoji支持
+enableEmoji = true
+
+# 启用Git信息
+enableGitInfo = true
+
+# 分页设置
+paginate = 10
+
+# 构建设置
+[build]
+  writeStats = true
+
+# 菜单配置
+[menu]
+  [[menu.main]]
+    identifier = "home"
+    name = "首页"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    identifier = "archives"
+    name = "归档"
+    url = "/archives/"
+    weight = 2
+  [[menu.main]]
+    identifier = "tags"
+    name = "标签"
+    url = "/tags/"
+    weight = 3
+  [[menu.main]]
+    identifier = "about"
+    name = "关于"
+    url = "/about/"
+    weight = 4
+
+# PaperMod 主题参数
+[params]
+  env = "production"
+  description = "这是我的个人博客"
+  author = "Your Name"
+  defaultTheme = "auto"
+  ShowReadingTime = true
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowWordCount = true
+  ShowRssButtonInSectionTermList = true
+  UseHugoToc = true
+  disableSpecial1stPost = false
+  disableScrollToTop = false
+  comments = false
+  hidemeta = false
+  hideSummary = false
+  showtoc = true
+  tocopen = false
+
+  [params.homeInfoParams]
+    Title = "欢迎来到我的博客"
+    Content = "这是一个使用Hugo和PaperMod主题搭建的博客"
+
+  [[params.socialIcons]]
+    name = "github"
+    url = "https://github.com/yourusername"
+
+# 输出格式
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+
+# Markdown 渲染设置
+[markup]
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = true
+    lineNos = true
+    style = "monokai"
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true

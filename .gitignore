@@ -1,0 +1,26 @@
+# Hugo 生成的文件 - 由GitHub Actions构建，不需要本地存储
+/public/
+/resources/_gen/
+/.hugo_build.lock
+
+# 编辑器和IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# Node.js (如果使用npm包)
+node_modules/
+package-lock.json
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
