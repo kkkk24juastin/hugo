@@ -2,7 +2,7 @@
 title: "关于我"
 date: 2026-02-04
 draft: false
-description: "关于博主 Kkkk24 的介绍"
+description: "关于博主 kkkk24 的介绍"
 hidemeta: true
 showToc: false
 disableShare: true
@@ -10,7 +10,7 @@ disableShare: true
 
 ## 👋 你好！
 
-欢迎来到 **Kkkk24** 的个人博客！
+欢迎来到 **kkkk24** 的个人博客！
 
 ### 🛠️ 技术栈
 

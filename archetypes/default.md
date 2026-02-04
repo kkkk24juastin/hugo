@@ -7,7 +7,7 @@ draft: true
 # aliases: ["/first"]
 tags: []
 categories: []
-author: ["Kkkk24"]
+author: ["kkkk24"]
 # author: ["Me", "You"]  # 多作者
 
 # 文章描述

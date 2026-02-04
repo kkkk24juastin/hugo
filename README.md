@@ -1,4 +1,4 @@
-# Kkkk24 的博客
+# kkkk24 的博客
 
 这是一个使用 [Hugo](https://gohugo.io/) 静态网站生成器和 [PaperMod](https://github.com/adityatelange/hugo-PaperMod) 主题搭建的个人博客。
 
@@ -104,7 +104,7 @@ draft: false                    # 是否为草稿
 weight: 1                       # 置顶权重
 tags: ["标签1", "标签2"]
 categories: ["分类"]
-author: ["Kkkk24"]
+author: ["kkkk24"]
 description: "文章描述"
 showToc: true                   # 显示目录
 TocOpen: false                  # 目录默认展开

@@ -164,7 +164,7 @@ enableGitInfo = true
   
   # description: 站点描述
   # 说明: 用于 SEO meta 标签和社交分享
-  description = "Kkkk24 的个人博客 - 技术分享与生活记录"
+  description = "kkkk24 的个人博客 - 技术分享与生活记录"
   
   # keywords: 关键词列表
   # 说明: 用于首页的 meta keywords 标签
@@ -174,7 +174,7 @@ enableGitInfo = true
   # 说明: 显示在文章元信息中
   # 格式: 字符串 "作者名" 或 数组 ["作者1", "作者2"]
   author = "kkkk24"
-  # author = ["Kkkk24", "Guest"]  # 多作者写法
+  # author = ["kkkk24", "Guest"]  # 多作者写法
   
   # images: 默认分享图片
   # 说明: 当文章没有封面图时, 用于 OpenGraph 和 Twitter Cards
@@ -515,7 +515,7 @@ enableGitInfo = true
   [params.label]
     # text: 导航栏显示的站点名称
     # 说明: 默认使用站点标题
-    text = "Kkkk24 的博客"
+    text = "kkkk24 的博客"
     
     # icon: 导航栏 Logo 图片
     # 说明: 放在 static/ 目录下

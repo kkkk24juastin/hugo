@@ -3,7 +3,7 @@ title: "Hello World - 我的第一篇博客文章"
 date: 2026-02-04
 lastmod: 2026-02-04
 draft: false
-author: ["Kkkk24"]
+author: ["kkkk24"]
 tags: ["Hugo", "博客", "PaperMod"]
 categories: ["入门"]
 description: "这是我使用Hugo搭建博客后的第一篇文章，介绍了博客的架构和特性"
