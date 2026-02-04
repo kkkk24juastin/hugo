@@ -3,10 +3,50 @@
  * 文档: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#bundling-custom-css-with-themes-assets
  */
 
+/* ======== 性能优化样式 ======== */
+
+/* 图片懒加载占位效果 */
+.post-content img,
+.entry-cover img {
+  /* 占位背景色 */
+  background-color: var(--code-bg);
+  /* 平滑过渡效果 */
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* 图片加载中的渐显效果 */
+.post-content img[loading="lazy"],
+.entry-cover img[loading="lazy"] {
+  opacity: 0;
+}
+
+.post-content img.loaded,
+.entry-cover img.loaded,
+.post-content img:not([loading="lazy"]),
+.entry-cover img:not([loading="lazy"]) {
+  opacity: 1;
+}
+
+/* 优化 iframe 懒加载 (如嵌入的视频) */
+iframe {
+  background-color: var(--code-bg);
+}
+
+/* 减少布局偏移 - 为图片预留空间 */
+.post-content img {
+  aspect-ratio: attr(width) / attr(height);
+  height: auto;
+  max-width: 100%;
+}
+
+/* ======== 基础样式修复 ======== */
+
 /* 修复使用 Hugo Chroma 语法高亮时的背景色问题 */
 .chroma {
   background-color: unset;
 }
+
+/* ======== 链接样式 ======== */
 
 /* 自定义链接样式 */
 .post-content a {
@@ -17,10 +57,14 @@
   text-decoration: underline;
 }
 
+/* ======== 代码块样式 ======== */
+
 /* 自定义代码块样式 */
 .post-content pre {
   border-radius: 8px;
 }
+
+/* ======== 引用块样式 ======== */
 
 /* 自定义引用块样式 */
 .post-content blockquote {
@@ -28,6 +72,8 @@
   padding-left: 1rem;
   font-style: italic;
 }
+
+/* ======== 表格样式 ======== */
 
 /* 自定义表格样式 */
 .post-content table {
@@ -46,8 +92,31 @@
   background-color: var(--code-bg);
 }
 
+/* ======== 图片样式 ======== */
+
 /* 自定义图片居中 */
 .post-content img[src$='#center'] {
   display: block;
   margin: 0 auto;
+}
+
+/* ======== 平滑滚动 ======== */
+
+/* 启用平滑滚动 (但减少动画以提升性能) */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* 对于偏好减少动画的用户，禁用过渡 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

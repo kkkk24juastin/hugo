@@ -80,6 +80,121 @@ enableGitInfo = true
   # 说明: true = 压缩 HTML, 减小文件体积
   minifyOutput = true
 
+  # CSS 最小化设置
+  [minify.tdewolff]
+    [minify.tdewolff.css]
+      # keepCSS2: 保持 CSS2 兼容性
+      keepCSS2 = false
+      # precision: 数值精度 (小数位数)
+      # 说明: 减小可以进一步压缩文件
+      precision = 0
+    
+    [minify.tdewolff.html]
+      # keepDocumentTags: 保留 html/head/body 标签
+      keepDocumentTags = true
+      # keepEndTags: 保留结束标签
+      keepEndTags = true
+      # keepQuotes: 保留引号
+      keepQuotes = false
+      # keepWhitespace: 保留空白
+      # 说明: false = 移除不必要的空白字符
+      keepWhitespace = false
+    
+    [minify.tdewolff.js]
+      # keepVarNames: 保留变量名
+      # 说明: false = 压缩变量名
+      keepVarNames = false
+      # precision: 数值精度
+      precision = 0
+    
+    [minify.tdewolff.json]
+      # keepNumbers: 保留数字格式
+      keepNumbers = false
+      # precision: 数值精度
+      precision = 0
+    
+    [minify.tdewolff.svg]
+      # keepComments: 保留 SVG 注释
+      keepComments = false
+      # precision: 数值精度
+      precision = 0
+    
+    [minify.tdewolff.xml]
+      # keepWhitespace: 保留空白
+      keepWhitespace = false
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                           构建性能优化                                     │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+[build]
+  # writeStats: 写入构建统计信息
+  # 说明: 用于 CSS purging 和 tree-shaking
+  writeStats = true
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                           缓存配置                                         │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+[caches]
+  # 资源缓存配置
+  # 说明: 缓存可以加速重复构建
+  [caches.assets]
+    dir = ":resourceDir/_gen"
+    maxAge = "720h"  # 30 天
+  
+  [caches.getcsv]
+    dir = ":cacheDir/:project"
+    maxAge = "4h"
+  
+  [caches.getjson]
+    dir = ":cacheDir/:project"
+    maxAge = "4h"
+  
+  [caches.getresource]
+    dir = ":cacheDir/:project"
+    maxAge = "4h"
+  
+  [caches.images]
+    dir = ":resourceDir/_gen"
+    maxAge = "720h"  # 30 天
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                           图片处理优化                                     │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+[imaging]
+  # quality: 图片质量 (1-100)
+  # 说明: 越低文件越小，但质量下降
+  # 推荐值: 75-85
+  quality = 80
+  
+  # resampleFilter: 重采样滤镜
+  # 可选值: Box, NearestNeighbor, Linear, Gaussian, Lanczos (质量最高但最慢)
+  resampleFilter = "Lanczos"
+  
+  # hint: 图片优化提示
+  # 可选值: photo, picture, drawing, icon, text
+  hint = "photo"
+  
+  # anchor: 裁剪锚点
+  # 可选值: Smart, Center, TopLeft, Top, TopRight, Left, Right, BottomLeft, Bottom, BottomRight
+  anchor = "Smart"
+  
+  # bgColor: 背景颜色 (用于透明图片)
+  bgColor = "#ffffff"
+  
+  [imaging.exif]
+    # disableDate: 禁用 EXIF 日期
+    disableDate = false
+    # disableLatLong: 禁用 EXIF 位置信息
+    # 说明: true = 保护隐私，不暴露位置
+    disableLatLong = true
+    # excludeFields: 排除的 EXIF 字段
+    excludeFields = ""
+    # includeFields: 包含的 EXIF 字段
+    includeFields = ""
+
 # ┌───────────────────────────────────────────────────────────────────────────┐
 # │                           输出格式配置                                     │
 # └───────────────────────────────────────────────────────────────────────────┘
