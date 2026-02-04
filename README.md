@@ -1,6 +1,6 @@
 # 我的Hugo博客
 
-这是一个使用 Hugo 静态网站生成器搭建的个人博客，采用 GitHub Actions 自动构建并部署到 GitHub Pages。
+这是一个使用 Hugo 静态网站生成器搭建的个人博客，采用 GitHub Actions 自动编译生成静态文件。
 
 ## 📁 项目结构
 
@@ -43,18 +43,40 @@ git commit -m "Initial commit: Hugo blog setup"
 
 ```bash
 # 添加远程仓库（替换为你的仓库地址）
-git remote add origin https://github.com/yourusername/yourusername.github.io.git
+git remote add origin https://github.com/yourusername/hugo-blog.git
 
 # 推送到 main 分支
 git branch -M main
 git push -u origin main
 ```
 
-### 3. 配置 GitHub Pages
+### 3. 自动编译
 
-1. 在 GitHub 仓库中，进入 **Settings** > **Pages**
-2. 在 **Source** 下选择 **GitHub Actions**
-3. 等待 Actions 完成构建，你的博客就会自动部署
+推送到 `main` 分支后，GitHub Actions 会自动：
+1. 编译生成静态文件
+2. 将静态文件保存为 Artifact（可在 Actions 页面下载）
+3. 将静态文件推送到 `gh-pages` 分支
+
+## 🖥️ 在服务器上部署
+
+### 方法一：拉取 gh-pages 分支
+
+```bash
+# 克隆 gh-pages 分支到服务器
+git clone --branch gh-pages --single-branch https://github.com/yourusername/hugo-blog.git /var/www/blog
+
+# 后续更新
+cd /var/www/blog
+git pull
+```
+
+### 方法二：使用 Webhook 自动更新
+
+在服务器上设置 Webhook，当 `gh-pages` 分支更新时自动拉取最新文件。
+
+### 方法三：下载 Artifact
+
+在 GitHub Actions 页面下载最新的 `hugo-site` artifact，解压到服务器。
 
 ## ✍️ 写新文章
 
@@ -86,7 +108,7 @@ description: "文章描述"
 
 编辑 `hugo.toml` 文件来自定义你的博客：
 
-- `baseURL`: 修改为你的博客地址
+- `baseURL`: 修改为你的博客实际访问地址
 - `title`: 博客标题
 - `params.author`: 作者名称
 - `params.description`: 博客描述
@@ -119,12 +141,12 @@ hugo server -D
 3. 更新 `hugo.toml` 中的 `theme` 配置
 4. 根据新主题的文档调整配置
 
-## 📝 注意事项
+## 📝 工作流程
 
-- 本仓库只存储源文件（文章、主题配置等）
-- 静态文件由 GitHub Actions 自动生成
-- 推送到 `main` 分支会自动触发部署
-- `public/` 目录已被 `.gitignore` 忽略
+1. **本地**：只存储文章源文件（`content/`）和主题配置
+2. **GitHub Actions**：自动编译生成静态文件
+3. **gh-pages 分支**：存储编译后的静态文件
+4. **服务器**：拉取 `gh-pages` 分支的静态文件
 
 ## 📄 许可证
 

@@ -1,5 +1,6 @@
-# Hugo 博客自动部署到 GitHub Pages
-name: Deploy Hugo site to Pages
+# Hugo 博客自动编译
+# 编译后将静态文件保存为artifact，并推送到 gh-pages 分支供服务器拉取
+name: Build Hugo Site
 
 on:
   # 当推送到 main 分支时触发
@@ -9,15 +10,13 @@ on:
   # 允许手动触发工作流
   workflow_dispatch:
 
-# 设置 GITHUB_TOKEN 的权限以允许部署到 GitHub Pages
+# 设置权限
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# 只允许一个并发部署
+# 只允许一个并发构建
 concurrency:
-  group: "pages"
+  group: "build"
   cancel-in-progress: false
 
 # 默认使用 bash
@@ -46,10 +45,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-
       - name: Install Node.js dependencies
         run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
 
@@ -61,22 +56,24 @@ jobs:
         run: |
           hugo \
             --gc \
-            --minify \
-            --baseURL "${{ steps.pages.outputs.base_url }}/"
+            --minify
 
+      # 将静态文件作为 artifact 上传，可在 Actions 页面下载
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
+          name: hugo-site
           path: ./public
+          retention-days: 30
 
-  # 部署任务
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      # 将静态文件推送到 gh-pages 分支，供服务器拉取
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy: ${{ github.sha }}'
