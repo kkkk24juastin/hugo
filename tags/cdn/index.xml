@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>CDN on kkkk24 的博客</title>
+    <link>https://blog.kkkk24juastin.asia/tags/cdn/</link>
+    <description>Recent content in CDN on kkkk24 的博客</description>
+    <generator>Hugo -- 0.155.2</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 06 Feb 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://blog.kkkk24juastin.asia/tags/cdn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>博客加载太慢？我是这样排查和解决的</title>
+      <link>https://blog.kkkk24juastin.asia/posts/hugo-blog-speed-optimization-v2/</link>
+      <pubDate>Fri, 06 Feb 2026 00:00:00 +0000</pubDate>
+      <guid>https://blog.kkkk24juastin.asia/posts/hugo-blog-speed-optimization-v2/</guid>
+      <description>发现博客首页加载要 2 秒多，一顿排查之后找到了罪魁祸首</description>
+      <content:encoded><![CDATA[<h2 id="起因">起因</h2>
+<p>前两天觉得博客打开有点慢，但也没太在意。今天闲着没事，拿 curl 测了一下，好家伙，首字节时间（TTFB）居然要 2.28 秒：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -s -o /dev/null -w <span class="s2">&#34;TTFB: %{time_starttransfer}s\n&#34;</span> https://blog.kkkk24juastin.asia/
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 输出：TTFB: 2.280466s</span>
+</span></span></code></pre></div><p>这也太离谱了。明明挂着 Cloudflare CDN，怎么还这么慢？</p>
+<h2 id="排查过程">排查过程</h2>
+<p>先看看响应头：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -sI https://blog.kkkk24juastin.asia/ <span class="p">|</span> grep -i cache
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 输出：</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># cf-cache-status: DYNAMIC</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># cache-control: max-age=3600</span>
+</span></span></code></pre></div><p>看到 <code>cf-cache-status: DYNAMIC</code> 我就懂了。</p>
+<p>这玩意的意思是 Cloudflare 压根没缓存这个页面，每次访问都要回源到我的服务器。而我的服务器在国外，网络延迟加上 TLS 握手，2 秒多其实不算意外。</p>
+<h2 id="问题出在哪">问题出在哪</h2>
+<p>Cloudflare 有个&quot;特性&quot;：<strong>默认不缓存 HTML 页面</strong>。</p>
+<p>它的逻辑是 HTML 通常是动态生成的，不适合缓存。但对于静态博客来说，HTML 就是静态文件啊，为啥不能缓存？</p>
+<h2 id="解决方案">解决方案</h2>
+<p>需要手动加一条 Cache Rule，告诉 Cloudflare：这个域名下的 HTML 也给我缓存上。</p>
+<p>操作步骤：</p>
+<ol>
+<li>登录 Cloudflare Dashboard</li>
+<li>选你的域名</li>
+<li>进 <strong>Caching</strong> → <strong>Cache Rules</strong></li>
+<li>创建规则：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">匹配条件: 主机名 = blog.kkkk24juastin.asia
+</span></span><span class="line"><span class="cl">缓存设置: 
+</span></span><span class="line"><span class="cl">  - 符合缓存条件: 是
+</span></span><span class="line"><span class="cl">  - 边缘 TTL: 1 个月
+</span></span><span class="line"><span class="cl">  - 浏览器 TTL: 1 天
+</span></span></code></pre></div><p>保存，等几分钟生效。</p>
+<h2 id="效果验证">效果验证</h2>
+<p>再跑一遍：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 第一次，预热缓存</span>
+</span></span><span class="line"><span class="cl">curl -s -o /dev/null -w <span class="s2">&#34;TTFB: %{time_starttransfer}s\n&#34;</span> https://blog.kkkk24juastin.asia/
+</span></span><span class="line"><span class="cl"><span class="c1"># TTFB: 1.1s（回源了）</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 第二次，缓存命中</span>
+</span></span><span class="line"><span class="cl">curl -s -o /dev/null -w <span class="s2">&#34;TTFB: %{time_starttransfer}s\n&#34;</span> https://blog.kkkk24juastin.asia/
+</span></span><span class="line"><span class="cl"><span class="c1"># TTFB: 0.045s</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 确认缓存状态</span>
+</span></span><span class="line"><span class="cl">curl -sI https://blog.kkkk24juastin.asia/ <span class="p">|</span> grep cf-cache-status
+</span></span><span class="line"><span class="cl"><span class="c1"># cf-cache-status: HIT</span>
+</span></span></code></pre></div><p>从 2.28s 降到 45ms，提升了 98%。</p>
+<p>舒服了。</p>
+<h2 id="还做了啥">还做了啥</h2>
+<p>既然都折腾了，顺手做了几个小优化：</p>
+<h3 id="1-确认-brotli-压缩开了">1. 确认 Brotli 压缩开了</h3>
+<p>在 Cloudflare 的 Speed → Optimization 里，确保 Brotli 是开着的。比 Gzip 压缩率更高。</p>
+<h3 id="2-加了资源预加载">2. 加了资源预加载</h3>
+<p>在 <code>extend_head.html</code> 里加了 DNS 预解析：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;dns-prefetch&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;//fonts.googleapis.com&#34;</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;preconnect&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;https://fonts.googleapis.com&#34;</span> <span class="na">crossorigin</span><span class="p">&gt;</span>
+</span></span></code></pre></div><h3 id="3-构建时自动清缓存">3. 构建时自动清缓存</h3>
+<p>在 GitHub Actions 里加了一步，每次部署完自动清 Cloudflare 缓存：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl">- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">清缓存</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">    curl -X POST &#34;https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache&#34; \
+</span></span></span><span class="line"><span class="cl"><span class="sd">      -H &#34;Authorization: Bearer $CF_API_TOKEN&#34; \
+</span></span></span><span class="line"><span class="cl"><span class="sd">      --data &#39;{&#34;purge_everything&#34;:true}&#39;</span><span class="w">
+</span></span></span></code></pre></div><p>这样每次更新文章，CDN 会立刻拉取最新内容。</p>
+<h2 id="总结">总结</h2>
+<p>对于静态博客来说，优化的重点不在代码层面（Hugo 已经够快了），而是<strong>让 CDN 真正发挥作用</strong>。</p>
+<p>如果你的博客也挂着 Cloudflare 但还是慢，先检查一下 <code>cf-cache-status</code> 是不是 <code>HIT</code>。不是的话，多半是缓存规则没配好。</p>
+<p>就这样，收工。</p>
+]]></content:encoded>
+    </item>
+  </channel>
+</rss>

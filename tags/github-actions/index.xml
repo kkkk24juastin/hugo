@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>GitHub Actions on kkkk24 的博客</title>
+    <link>https://blog.kkkk24juastin.asia/tags/github-actions/</link>
+    <description>Recent content in GitHub Actions on kkkk24 的博客</description>
+    <generator>Hugo -- 0.155.2</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 06 Feb 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://blog.kkkk24juastin.asia/tags/github-actions/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>聊聊这个博客是怎么跑起来的</title>
+      <link>https://blog.kkkk24juastin.asia/posts/hugo-blog-architecture/</link>
+      <pubDate>Wed, 04 Feb 2026 00:00:00 +0000</pubDate>
+      <guid>https://blog.kkkk24juastin.asia/posts/hugo-blog-architecture/</guid>
+      <description>记录一下博客从写文章到上线的全过程，涉及 Hugo、GitHub Actions、服务器部署和 CDN 加速</description>
+      <content:encoded><![CDATA[<p>最近把博客从 Hexo 换成了 Hugo，顺便重新设计了一下构建和部署流程。趁热乎记录一下，也方便以后自己查。</p>
+<h2 id="先说结论整体流程">先说结论：整体流程</h2>
+<p>简单来说就是这么个事儿：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">我写 Markdown → 推到 GitHub → Actions 自动编译 → 服务器拉取 → Cloudflare 加速
+</span></span></code></pre></div><p>画个图更清楚：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">本地写文章 (Markdown)
+</span></span><span class="line"><span class="cl">        ↓ git push
+</span></span><span class="line"><span class="cl">GitHub main 分支
+</span></span><span class="line"><span class="cl">        ↓ 触发 Actions
+</span></span><span class="line"><span class="cl">GitHub Actions 编译
+</span></span><span class="line"><span class="cl">        ↓ 生成静态文件
+</span></span><span class="line"><span class="cl">gh-pages 分支
+</span></span><span class="line"><span class="cl">        ↓ 服务器 git pull
+</span></span><span class="line"><span class="cl">Nginx 托管静态文件
+</span></span><span class="line"><span class="cl">        ↓ 
+</span></span><span class="line"><span class="cl">Cloudflare CDN 缓存加速
+</span></span><span class="line"><span class="cl">        ↓
+</span></span><span class="line"><span class="cl">用户访问
+</span></span></code></pre></div><p>为啥要搞这么复杂？主要是不想每次改个错别字都要登服务器手动操作。</p>
+<h2 id="为啥选-hugo">为啥选 Hugo</h2>
+<p>之前用的 Hexo，没啥大毛病，但有几个痒点：</p>
+<ol>
+<li><strong>npm 依赖太多了</strong>。每次 CI 光装依赖就得好一会儿，偶尔还会出点版本冲突的幺蛾子</li>
+<li><strong>本地预览慢</strong>。文章多了之后，热更新明显变卡</li>
+<li><strong>想尝尝鲜</strong>。Hugo 用 Go 写的，据说快得离谱</li>
+</ol>
+<p>实际用下来，确实快。本地预览基本秒开，GitHub Actions 那边构建也就几秒钟的事。</p>
+<h2 id="github-actions自动化构建">GitHub Actions：自动化构建</h2>
+<p>这是整套流程的核心。配置文件在 <code>.github/workflows/hugo.yml</code>，做的事情也简单：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Build Hugo Site</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">on</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">push</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">branches</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="l">main]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">jobs</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">build</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l">ubuntu-latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">steps</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">装 Hugo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          wget -O hugo.deb https://github.com/gohugoio/hugo/releases/...
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sudo dpkg -i hugo.deb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">拉代码</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">actions/checkout@v4</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">submodules</span><span class="p">:</span><span class="w"> </span><span class="l">recursive </span><span class="w"> </span><span class="c"># 主题是 submodule</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">编译</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l">hugo --gc --minify</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">推到 gh-pages</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">peaceiris/actions-gh-pages@v4</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">publish_dir</span><span class="p">:</span><span class="w"> </span><span class="l">./public</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">publish_branch</span><span class="p">:</span><span class="w"> </span><span class="l">gh-pages</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">顺手清一下 CDN 缓存</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l">curl -X POST &#34;https://api.cloudflare.com/...&#34; ...</span><span class="w">
+</span></span></span></code></pre></div><p>每次 push 到 main 分支，Actions 就自动跑这一套。成功之后，编译好的静态文件就躺在 gh-pages 分支里了。</p>
+<h2 id="双分支策略">双分支策略</h2>
+<p>这个设计我挺满意的：</p>
+<ul>
+<li><strong>main 分支</strong>：源代码，Markdown 文件 + 主题配置</li>
+<li><strong>gh-pages 分支</strong>：编译产物，纯静态文件</li>
+</ul>
+<p>好处是服务器上不用装 Hugo，直接拉 gh-pages 就能用。万一哪天想换个部署方式，也方便。</p>
+<h2 id="服务器这边">服务器这边</h2>
+<p>服务器就做两件事：</p>
+<ol>
+<li>定时（或手动）从 gh-pages 拉最新的静态文件</li>
+<li>Nginx 伺候着</li>
+</ol>
+<p>Nginx 配置没啥特别的，主要是加了点缓存和压缩：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-nginx" data-lang="nginx"><span class="line"><span class="cl"><span class="k">server</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">listen</span> <span class="mi">80</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">server_name</span> <span class="s">blog.kkkk24juastin.asia</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">root</span> <span class="s">/var/www/blog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 压缩
+</span></span></span><span class="line"><span class="cl">    <span class="kn">gzip</span> <span class="no">on</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">gzip_types</span> <span class="s">text/css</span> <span class="s">application/javascript</span> <span class="s">text/html</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 静态资源缓存久一点
+</span></span></span><span class="line"><span class="cl">    <span class="kn">location</span> <span class="p">~</span><span class="sr">*</span> <span class="s">\.(css|js|png|jpg|woff2)</span>$ <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kn">expires</span> <span class="s">1y</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kn">add_header</span> <span class="s">Cache-Control</span> <span class="s">&#34;public,</span> <span class="s">immutable&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>更新脚本也就几行：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="nb">cd</span> /var/www/blog
+</span></span><span class="line"><span class="cl">git fetch origin gh-pages
+</span></span><span class="line"><span class="cl">git reset --hard origin/gh-pages
+</span></span></code></pre></div><p>扔 crontab 里定时跑，或者配个 webhook 触发都行。</p>
+<h2 id="cloudflare-加速">Cloudflare 加速</h2>
+<p>最后挂了层 Cloudflare，主要图几个好处：</p>
+<ol>
+<li><strong>全球 CDN</strong>。访客能从就近节点拿缓存，不用每次都回源</li>
+<li><strong>免费 SSL</strong>。懒得自己折腾证书</li>
+<li><strong>DDoS 防护</strong>。虽然我这小破站应该没人会打</li>
+</ol>
+<p>不过有个坑：Cloudflare 默认不缓存 HTML 页面。对于静态博客来说这太亏了，得手动加个 Cache Rule，让它把 HTML 也缓存上。</p>
+<p>配置好之后，访问速度从之前的 2 秒多降到了几十毫秒，效果立竿见影。</p>
+<h2 id="实际效果">实际效果</h2>
+<p>优化前后的对比：</p>
+<table>
+  <thead>
+      <tr>
+          <th>指标</th>
+          <th>之前</th>
+          <th>现在</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>首字节时间 (TTFB)</td>
+          <td>2.28s</td>
+          <td>~50ms</td>
+      </tr>
+      <tr>
+          <td>页面加载</td>
+          <td>3.5s</td>
+          <td>0.8s</td>
+      </tr>
+  </tbody>
+</table>
+<p>主要提升来自 CDN 缓存。代码层面其实已经没啥可优化的了，瓶颈都在网络延迟。</p>
+<h2 id="一些碎碎念">一些碎碎念</h2>
+<p>整套流程跑下来，最爽的是真的不用操心部署了。写完文章，commit + push，等个几十秒，刷新页面就能看到更新。</p>
+<p>当然也有不爽的地方。Hugo 的模板语法（Go Template）用起来不太顺手，文档也比较散。不过忍忍就好，毕竟主题配好了基本不用改。</p>
+<p>如果你也在折腾博客，希望这篇能有点帮助。有问题可以留言，看到会回的 👋</p>
+]]></content:encoded>
+    </item>
+  </channel>
+</rss>

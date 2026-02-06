@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>博客 on kkkk24 的博客</title>
+    <link>https://blog.kkkk24juastin.asia/tags/%E5%8D%9A%E5%AE%A2/</link>
+    <description>Recent content in 博客 on kkkk24 的博客</description>
+    <generator>Hugo -- 0.155.2</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Fri, 06 Feb 2026 00:00:00 +0000</lastBuildDate>
+    <atom:link href="https://blog.kkkk24juastin.asia/tags/%E5%8D%9A%E5%AE%A2/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>聊聊这个博客是怎么跑起来的</title>
+      <link>https://blog.kkkk24juastin.asia/posts/hugo-blog-architecture/</link>
+      <pubDate>Wed, 04 Feb 2026 00:00:00 +0000</pubDate>
+      <guid>https://blog.kkkk24juastin.asia/posts/hugo-blog-architecture/</guid>
+      <description>记录一下博客从写文章到上线的全过程，涉及 Hugo、GitHub Actions、服务器部署和 CDN 加速</description>
+      <content:encoded><![CDATA[<p>最近把博客从 Hexo 换成了 Hugo，顺便重新设计了一下构建和部署流程。趁热乎记录一下，也方便以后自己查。</p>
+<h2 id="先说结论整体流程">先说结论：整体流程</h2>
+<p>简单来说就是这么个事儿：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">我写 Markdown → 推到 GitHub → Actions 自动编译 → 服务器拉取 → Cloudflare 加速
+</span></span></code></pre></div><p>画个图更清楚：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">本地写文章 (Markdown)
+</span></span><span class="line"><span class="cl">        ↓ git push
+</span></span><span class="line"><span class="cl">GitHub main 分支
+</span></span><span class="line"><span class="cl">        ↓ 触发 Actions
+</span></span><span class="line"><span class="cl">GitHub Actions 编译
+</span></span><span class="line"><span class="cl">        ↓ 生成静态文件
+</span></span><span class="line"><span class="cl">gh-pages 分支
+</span></span><span class="line"><span class="cl">        ↓ 服务器 git pull
+</span></span><span class="line"><span class="cl">Nginx 托管静态文件
+</span></span><span class="line"><span class="cl">        ↓ 
+</span></span><span class="line"><span class="cl">Cloudflare CDN 缓存加速
+</span></span><span class="line"><span class="cl">        ↓
+</span></span><span class="line"><span class="cl">用户访问
+</span></span></code></pre></div><p>为啥要搞这么复杂？主要是不想每次改个错别字都要登服务器手动操作。</p>
+<h2 id="为啥选-hugo">为啥选 Hugo</h2>
+<p>之前用的 Hexo，没啥大毛病，但有几个痒点：</p>
+<ol>
+<li><strong>npm 依赖太多了</strong>。每次 CI 光装依赖就得好一会儿，偶尔还会出点版本冲突的幺蛾子</li>
+<li><strong>本地预览慢</strong>。文章多了之后，热更新明显变卡</li>
+<li><strong>想尝尝鲜</strong>。Hugo 用 Go 写的，据说快得离谱</li>
+</ol>
+<p>实际用下来，确实快。本地预览基本秒开，GitHub Actions 那边构建也就几秒钟的事。</p>
+<h2 id="github-actions自动化构建">GitHub Actions：自动化构建</h2>
+<p>这是整套流程的核心。配置文件在 <code>.github/workflows/hugo.yml</code>，做的事情也简单：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Build Hugo Site</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">on</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">push</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">branches</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="l">main]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">jobs</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">build</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l">ubuntu-latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">steps</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">装 Hugo</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p">|</span><span class="sd">
+</span></span></span><span class="line"><span class="cl"><span class="sd">          wget -O hugo.deb https://github.com/gohugoio/hugo/releases/...
+</span></span></span><span class="line"><span class="cl"><span class="sd">          sudo dpkg -i hugo.deb</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">拉代码</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">actions/checkout@v4</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">submodules</span><span class="p">:</span><span class="w"> </span><span class="l">recursive </span><span class="w"> </span><span class="c"># 主题是 submodule</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">编译</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l">hugo --gc --minify</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">推到 gh-pages</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">peaceiris/actions-gh-pages@v4</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">publish_dir</span><span class="p">:</span><span class="w"> </span><span class="l">./public</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">publish_branch</span><span class="p">:</span><span class="w"> </span><span class="l">gh-pages</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">顺手清一下 CDN 缓存</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l">curl -X POST &#34;https://api.cloudflare.com/...&#34; ...</span><span class="w">
+</span></span></span></code></pre></div><p>每次 push 到 main 分支，Actions 就自动跑这一套。成功之后，编译好的静态文件就躺在 gh-pages 分支里了。</p>
+<h2 id="双分支策略">双分支策略</h2>
+<p>这个设计我挺满意的：</p>
+<ul>
+<li><strong>main 分支</strong>：源代码，Markdown 文件 + 主题配置</li>
+<li><strong>gh-pages 分支</strong>：编译产物，纯静态文件</li>
+</ul>
+<p>好处是服务器上不用装 Hugo，直接拉 gh-pages 就能用。万一哪天想换个部署方式，也方便。</p>
+<h2 id="服务器这边">服务器这边</h2>
+<p>服务器就做两件事：</p>
+<ol>
+<li>定时（或手动）从 gh-pages 拉最新的静态文件</li>
+<li>Nginx 伺候着</li>
+</ol>
+<p>Nginx 配置没啥特别的，主要是加了点缓存和压缩：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-nginx" data-lang="nginx"><span class="line"><span class="cl"><span class="k">server</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">listen</span> <span class="mi">80</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">server_name</span> <span class="s">blog.kkkk24juastin.asia</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">root</span> <span class="s">/var/www/blog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 压缩
+</span></span></span><span class="line"><span class="cl">    <span class="kn">gzip</span> <span class="no">on</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kn">gzip_types</span> <span class="s">text/css</span> <span class="s">application/javascript</span> <span class="s">text/html</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="c1"># 静态资源缓存久一点
+</span></span></span><span class="line"><span class="cl">    <span class="kn">location</span> <span class="p">~</span><span class="sr">*</span> <span class="s">\.(css|js|png|jpg|woff2)</span>$ <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kn">expires</span> <span class="s">1y</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kn">add_header</span> <span class="s">Cache-Control</span> <span class="s">&#34;public,</span> <span class="s">immutable&#34;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>更新脚本也就几行：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="cp">#!/bin/bash
+</span></span></span><span class="line"><span class="cl"><span class="nb">cd</span> /var/www/blog
+</span></span><span class="line"><span class="cl">git fetch origin gh-pages
+</span></span><span class="line"><span class="cl">git reset --hard origin/gh-pages
+</span></span></code></pre></div><p>扔 crontab 里定时跑，或者配个 webhook 触发都行。</p>
+<h2 id="cloudflare-加速">Cloudflare 加速</h2>
+<p>最后挂了层 Cloudflare，主要图几个好处：</p>
+<ol>
+<li><strong>全球 CDN</strong>。访客能从就近节点拿缓存，不用每次都回源</li>
+<li><strong>免费 SSL</strong>。懒得自己折腾证书</li>
+<li><strong>DDoS 防护</strong>。虽然我这小破站应该没人会打</li>
+</ol>
+<p>不过有个坑：Cloudflare 默认不缓存 HTML 页面。对于静态博客来说这太亏了，得手动加个 Cache Rule，让它把 HTML 也缓存上。</p>
+<p>配置好之后，访问速度从之前的 2 秒多降到了几十毫秒，效果立竿见影。</p>
+<h2 id="实际效果">实际效果</h2>
+<p>优化前后的对比：</p>
+<table>
+  <thead>
+      <tr>
+          <th>指标</th>
+          <th>之前</th>
+          <th>现在</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>首字节时间 (TTFB)</td>
+          <td>2.28s</td>
+          <td>~50ms</td>
+      </tr>
+      <tr>
+          <td>页面加载</td>
+          <td>3.5s</td>
+          <td>0.8s</td>
+      </tr>
+  </tbody>
+</table>
+<p>主要提升来自 CDN 缓存。代码层面其实已经没啥可优化的了，瓶颈都在网络延迟。</p>
+<h2 id="一些碎碎念">一些碎碎念</h2>
+<p>整套流程跑下来，最爽的是真的不用操心部署了。写完文章，commit + push，等个几十秒，刷新页面就能看到更新。</p>
+<p>当然也有不爽的地方。Hugo 的模板语法（Go Template）用起来不太顺手，文档也比较散。不过忍忍就好，毕竟主题配好了基本不用改。</p>
+<p>如果你也在折腾博客，希望这篇能有点帮助。有问题可以留言，看到会回的 👋</p>
+]]></content:encoded>
+    </item>
+    <item>
+      <title>Hugo 博客加载速度优化实践</title>
+      <link>https://blog.kkkk24juastin.asia/posts/hugo-blog-performance-optimization/</link>
+      <pubDate>Wed, 04 Feb 2026 00:00:00 +0000</pubDate>
+      <guid>https://blog.kkkk24juastin.asia/posts/hugo-blog-performance-optimization/</guid>
+      <description>记录优化 Hugo &#43; PaperMod 博客加载速度的完整过程，包括构建配置、图片懒加载、资源压缩等多个方面</description>
+      <content:encoded><![CDATA[<h2 id="发现问题">发现问题</h2>
+<p>博客搭建完成后，访问时总觉得有点卡。打开 Chrome DevTools 看了下 Network 面板，发现几个问题：</p>
+<ol>
+<li>图片没有做懒加载，首屏就加载了所有图片</li>
+<li>HTML/CSS/JS 文件可以进一步压缩</li>
+<li>没有利用好浏览器缓存</li>
+<li>外部资源（如字体）请求有延迟</li>
+</ol>
+<p>既然发现了问题，那就一个个解决。</p>
+<h2 id="hugo-构建优化">Hugo 构建优化</h2>
+<h3 id="深度压缩配置">深度压缩配置</h3>
+<p>Hugo 自带 minify 功能，但默认配置比较保守。在 <code>hugo.toml</code> 中可以配置更激进的压缩选项：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-toml" data-lang="toml"><span class="line"><span class="cl"><span class="p">[</span><span class="nx">minify</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">disableXML</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">minifyOutput</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">minify</span><span class="p">.</span><span class="nx">tdewolff</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="p">[</span><span class="nx">minify</span><span class="p">.</span><span class="nx">tdewolff</span><span class="p">.</span><span class="nx">css</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepCSS2</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">precision</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="p">[</span><span class="nx">minify</span><span class="p">.</span><span class="nx">tdewolff</span><span class="p">.</span><span class="nx">html</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepDocumentTags</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepEndTags</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepQuotes</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepWhitespace</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="p">[</span><span class="nx">minify</span><span class="p">.</span><span class="nx">tdewolff</span><span class="p">.</span><span class="nx">js</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepVarNames</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">precision</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="p">[</span><span class="nx">minify</span><span class="p">.</span><span class="nx">tdewolff</span><span class="p">.</span><span class="nx">json</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepNumbers</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">precision</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span><span class="line"><span class="cl">    
+</span></span><span class="line"><span class="cl">    <span class="p">[</span><span class="nx">minify</span><span class="p">.</span><span class="nx">tdewolff</span><span class="p">.</span><span class="nx">svg</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">keepComments</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">precision</span> <span class="p">=</span> <span class="mi">0</span>
+</span></span></code></pre></div><p>这个配置使用了 <a href="https://github.com/tdewolff/minify">tdewolff/minify</a> 库的参数，可以对各类资源做深度压缩：</p>
+<ul>
+<li><strong>CSS</strong>: 移除不必要的空格、简化数值精度</li>
+<li><strong>HTML</strong>: 移除空白、可选引号</li>
+<li><strong>JS</strong>: 压缩变量名</li>
+<li><strong>SVG</strong>: 移除注释、简化数值</li>
+</ul>
+<h3 id="构建缓存">构建缓存</h3>
+<p>重复构建时，很多资源是不变的，可以利用缓存加速：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-toml" data-lang="toml"><span class="line"><span class="cl"><span class="p">[</span><span class="nx">build</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">writeStats</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">[</span><span class="nx">caches</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">caches</span><span class="p">.</span><span class="nx">assets</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">dir</span> <span class="p">=</span> <span class="s2">&#34;:resourceDir/_gen&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">maxAge</span> <span class="p">=</span> <span class="s2">&#34;720h&#34;</span>  <span class="c"># 30 天</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">caches</span><span class="p">.</span><span class="nx">getcsv</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">dir</span> <span class="p">=</span> <span class="s2">&#34;:cacheDir/:project&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">maxAge</span> <span class="p">=</span> <span class="s2">&#34;4h&#34;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">caches</span><span class="p">.</span><span class="nx">getjson</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">dir</span> <span class="p">=</span> <span class="s2">&#34;:cacheDir/:project&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">maxAge</span> <span class="p">=</span> <span class="s2">&#34;4h&#34;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">caches</span><span class="p">.</span><span class="nx">getresource</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">dir</span> <span class="p">=</span> <span class="s2">&#34;:cacheDir/:project&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">maxAge</span> <span class="p">=</span> <span class="s2">&#34;4h&#34;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">caches</span><span class="p">.</span><span class="nx">images</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">dir</span> <span class="p">=</span> <span class="s2">&#34;:resourceDir/_gen&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">maxAge</span> <span class="p">=</span> <span class="s2">&#34;720h&#34;</span>
+</span></span></code></pre></div><p><code>writeStats = true</code> 会生成一个包含所有使用过的类名的文件，可以配合 PurgeCSS 做 tree-shaking（虽然 PaperMod 主题本身已经很精简了）。</p>
+<h3 id="图片处理优化">图片处理优化</h3>
+<p>Hugo 的图片处理功能很强大，合理配置可以减小图片体积：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-toml" data-lang="toml"><span class="line"><span class="cl"><span class="p">[</span><span class="nx">imaging</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">quality</span> <span class="p">=</span> <span class="mi">80</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">resampleFilter</span> <span class="p">=</span> <span class="s2">&#34;Lanczos&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">hint</span> <span class="p">=</span> <span class="s2">&#34;photo&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">anchor</span> <span class="p">=</span> <span class="s2">&#34;Smart&#34;</span>
+</span></span><span class="line"><span class="cl">  <span class="nx">bgColor</span> <span class="p">=</span> <span class="s2">&#34;#ffffff&#34;</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="p">[</span><span class="nx">imaging</span><span class="p">.</span><span class="nx">exif</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">disableDate</span> <span class="p">=</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">disableLatLong</span> <span class="p">=</span> <span class="kc">true</span>  <span class="c"># 保护隐私</span>
+</span></span></code></pre></div><ul>
+<li><code>quality = 80</code>：图片质量设为 80%，肉眼几乎看不出差别，但体积能减小不少</li>
+<li><code>resampleFilter = &quot;Lanczos&quot;</code>：高质量重采样算法，适合缩放照片</li>
+<li><code>anchor = &quot;Smart&quot;</code>：智能裁剪，自动识别图片主体</li>
+<li><code>disableLatLong = true</code>：移除 EXIF 中的位置信息，保护隐私</li>
+</ul>
+<h2 id="前端优化">前端优化</h2>
+<h3 id="dns-预解析和预连接">DNS 预解析和预连接</h3>
+<p>浏览器解析域名需要时间，可以用 <code>dns-prefetch</code> 提前解析外部域名：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="c">&lt;!-- 放在 layouts/partials/extend_head.html --&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;dns-prefetch&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;//fonts.googleapis.com&#34;</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;dns-prefetch&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;//fonts.gstatic.com&#34;</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;dns-prefetch&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;//cdn.jsdelivr.net&#34;</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;preconnect&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;https://fonts.googleapis.com&#34;</span> <span class="na">crossorigin</span><span class="p">&gt;</span>
+</span></span><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">link</span> <span class="na">rel</span><span class="o">=</span><span class="s">&#34;preconnect&#34;</span> <span class="na">href</span><span class="o">=</span><span class="s">&#34;https://fonts.gstatic.com&#34;</span> <span class="na">crossorigin</span><span class="p">&gt;</span>
+</span></span></code></pre></div><p><code>preconnect</code> 比 <code>dns-prefetch</code> 更进一步，会提前建立完整的 TCP 连接。</p>
+<h3 id="图片懒加载">图片懒加载</h3>
+<p>现代浏览器都支持原生的 <code>loading=&quot;lazy&quot;</code> 属性，不需要额外的 JS 库：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-javascript" data-lang="javascript"><span class="line"><span class="cl"><span class="nb">document</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;DOMContentLoaded&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kd">function</span> <span class="nx">addLoadedClass</span><span class="p">(</span><span class="nx">img</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nx">img</span><span class="p">.</span><span class="nx">complete</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">img</span><span class="p">.</span><span class="nx">classList</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">&#39;loaded&#39;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">img</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="s1">&#39;load&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">img</span><span class="p">.</span><span class="nx">classList</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="s1">&#39;loaded&#39;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="p">});</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  
+</span></span><span class="line"><span class="cl">  <span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="s1">&#39;.post-content img&#39;</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">img</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">img</span><span class="p">.</span><span class="nx">hasAttribute</span><span class="p">(</span><span class="s1">&#39;loading&#39;</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">img</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">&#39;loading&#39;</span><span class="p">,</span> <span class="s1">&#39;lazy&#39;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">      <span class="nx">img</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="s1">&#39;decoding&#39;</span><span class="p">,</span> <span class="s1">&#39;async&#39;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">addLoadedClass</span><span class="p">(</span><span class="nx">img</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="p">});</span>
+</span></span><span class="line"><span class="cl"><span class="p">});</span>
+</span></span></code></pre></div><p>这段代码做了两件事：</p>
+<ol>
+<li>给所有文章图片添加 <code>loading=&quot;lazy&quot;</code> 和 <code>decoding=&quot;async&quot;</code> 属性</li>
+<li>图片加载完成后添加 <code>loaded</code> 类，配合 CSS 做渐显效果</li>
+</ol>
+<h3 id="图片渐显效果">图片渐显效果</h3>
+<p>配合上面的 JS，在 CSS 中实现平滑的渐显效果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-css" data-lang="css"><span class="line"><span class="cl"><span class="c">/* assets/css/extended/custom.css */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">.</span><span class="nc">post-content</span> <span class="nt">img</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">.</span><span class="nc">entry-cover</span> <span class="nt">img</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">background-color</span><span class="p">:</span> <span class="nf">var</span><span class="p">(</span><span class="o">--</span><span class="n">code</span><span class="o">-</span><span class="n">bg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">transition</span><span class="p">:</span> <span class="k">opacity</span> <span class="mf">0.3</span><span class="kt">s</span> <span class="kc">ease-in-out</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">.</span><span class="nc">post-content</span> <span class="nt">img</span><span class="o">[</span><span class="nt">loading</span><span class="o">=</span><span class="s2">&#34;lazy&#34;</span><span class="o">],</span>
+</span></span><span class="line"><span class="cl"><span class="p">.</span><span class="nc">entry-cover</span> <span class="nt">img</span><span class="o">[</span><span class="nt">loading</span><span class="o">=</span><span class="s2">&#34;lazy&#34;</span><span class="o">]</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">opacity</span><span class="p">:</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">.</span><span class="nc">post-content</span> <span class="nt">img</span><span class="p">.</span><span class="nc">loaded</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">.</span><span class="nc">entry-cover</span> <span class="nt">img</span><span class="p">.</span><span class="nc">loaded</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">opacity</span><span class="p">:</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>这样图片在加载时会显示一个灰色占位背景，加载完成后平滑显示。</p>
+<h3 id="减少布局偏移">减少布局偏移</h3>
+<p>图片加载时如果没有预留空间，会导致页面布局跳动（CLS 指标），用户体验很差：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-css" data-lang="css"><span class="line"><span class="cl"><span class="p">.</span><span class="nc">post-content</span> <span class="nt">img</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">aspect-ratio</span><span class="p">:</span> <span class="nb">attr</span><span class="p">(</span><span class="n">width</span><span class="p">)</span> <span class="o">/</span> <span class="nb">attr</span><span class="p">(</span><span class="n">height</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">height</span><span class="p">:</span> <span class="kc">auto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">max-width</span><span class="p">:</span> <span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><p>如果图片设置了 width 和 height 属性，浏览器可以提前计算出图片的宽高比，预留好空间。</p>
+<h3 id="尊重用户偏好">尊重用户偏好</h3>
+<p>有些用户可能对动画敏感，可以检测并禁用过渡效果：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-css" data-lang="css"><span class="line"><span class="cl"><span class="p">@</span><span class="k">media</span> <span class="o">(</span><span class="nt">prefers-reduced-motion</span><span class="o">:</span> <span class="nt">no-preference</span><span class="o">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nt">html</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">scroll-behavior</span><span class="p">:</span> <span class="kc">smooth</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">@</span><span class="k">media</span> <span class="o">(</span><span class="nt">prefers-reduced-motion</span><span class="o">:</span> <span class="nt">reduce</span><span class="o">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="o">*,</span>
+</span></span><span class="line"><span class="cl">  <span class="o">*</span><span class="p">::</span><span class="nd">before</span><span class="o">,</span>
+</span></span><span class="line"><span class="cl">  <span class="o">*</span><span class="p">::</span><span class="nd">after</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">animation-duration</span><span class="p">:</span> <span class="mf">0.01</span><span class="kt">ms</span> <span class="cp">!important</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">transition-duration</span><span class="p">:</span> <span class="mf">0.01</span><span class="kt">ms</span> <span class="cp">!important</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">scroll-behavior</span><span class="p">:</span> <span class="kc">auto</span> <span class="cp">!important</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></div><h2 id="优化效果">优化效果</h2>
+<p>做完这些优化后，再看 Lighthouse 跑分：</p>
+<table>
+  <thead>
+      <tr>
+          <th>指标</th>
+          <th>优化前</th>
+          <th>优化后</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>首次内容绘制 (FCP)</td>
+          <td>~1.5s</td>
+          <td>~0.8s</td>
+      </tr>
+      <tr>
+          <td>最大内容绘制 (LCP)</td>
+          <td>~2.5s</td>
+          <td>~1.5s</td>
+      </tr>
+      <tr>
+          <td>累积布局偏移 (CLS)</td>
+          <td>0.15</td>
+          <td>&lt; 0.05</td>
+      </tr>
+  </tbody>
+</table>
+<p>当然，实际效果还取决于服务器性能和用户网络。</p>
+<h2 id="更多优化思路">更多优化思路</h2>
+<p>这次只做了 Hugo 本身的优化，还有一些可以继续优化的方向：</p>
+<ol>
+<li><strong>CDN 加速</strong>：把静态资源放到 CDN 上，全球访问都很快</li>
+<li><strong>Gzip/Brotli 压缩</strong>：服务器开启压缩，进一步减小传输体积</li>
+<li><strong>HTTP/2</strong>：启用 HTTP/2 多路复用，并行加载资源</li>
+<li><strong>字体优化</strong>：使用 <code>font-display: swap</code> 避免字体阻塞渲染</li>
+<li><strong>图片格式</strong>：使用 WebP/AVIF 等现代格式</li>
+</ol>
+<p>后续有空再继续折腾。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a href="https://gohugo.io/getting-started/configuration/#configure-minify">Hugo 官方文档 - Configure Minify</a></li>
+<li><a href="https://gohugo.io/content-management/image-processing/">Hugo 官方文档 - Image Processing</a></li>
+<li><a href="https://web.dev/browser-level-image-lazy-loading/">Web.dev - Browser-level image lazy loading</a></li>
+<li><a href="https://web.dev/optimize-cls/">Web.dev - Optimize Cumulative Layout Shift</a></li>
+</ul>
+]]></content:encoded>
+    </item>
+  </channel>
+</rss>
