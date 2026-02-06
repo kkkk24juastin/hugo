@@ -5,14 +5,13 @@
 
 {{/* ======== 性能优化 ======== */}}
 
-{{/* DNS 预解析 - 加速外部资源加载 */}}
-<link rel="dns-prefetch" href="//fonts.googleapis.com">
-<link rel="dns-prefetch" href="//fonts.gstatic.com">
-<link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+{{/* DNS 预解析 - 加速外部资源加载 (针对中国大陆优化) */}}
+<link rel="dns-prefetch" href="//jsd.cdn.zzko.cn">
+<link rel="dns-prefetch" href="//pl.kkkk24juastin.asia">
 
-{{/* 预连接 - 提前建立连接 */}}
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+{{/* 预连接 - 提前建立 Twikoo 评论和 CDN 连接 */}}
+<link rel="preconnect" href="https://jsd.cdn.zzko.cn" crossorigin>
+<link rel="preconnect" href="https://pl.kkkk24juastin.asia" crossorigin>
 
 {{/* 图片懒加载脚本 - 使用原生 loading="lazy" 属性 */}}
 <script>
