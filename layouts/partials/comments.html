@@ -1,57 +1,25 @@
 {{/* 评论系统配置
      文档: https://github.com/adityatelange/hugo-PaperMod/wiki/Features#comments
-     在这里粘贴评论提供商的代码
+     
+     当前使用: Twikoo 评论系统 (自托管)
+     官方文档: https://twikoo.js.org/
 */}}
 
-{{/* ===== Giscus 评论系统 (推荐) =====
-     配置地址: https://giscus.app/zh-CN
-     
-<script src="https://giscus.app/client.js"
-        data-repo="[ENTER REPO HERE]"
-        data-repo-id="[ENTER REPO ID HERE]"
-        data-category="[ENTER CATEGORY NAME HERE]"
-        data-category-id="[ENTER CATEGORY ID HERE]"
-        data-mapping="pathname"
-        data-strict="0"
-        data-reactions-enabled="1"
-        data-emit-metadata="0"
-        data-input-position="bottom"
-        data-theme="preferred_color_scheme"
-        data-lang="zh-CN"
-        crossorigin="anonymous"
-        async>
-</script>
-*/}}
-
-{{/* ===== Utterances 评论系统 =====
-     配置地址: https://utteranc.es/
-     
-<script src="https://utteranc.es/client.js"
-        repo="[ENTER REPO HERE]"
-        issue-term="pathname"
-        theme="github-light"
-        crossorigin="anonymous"
-        async>
-</script>
-*/}}
-
-{{/* ===== Disqus 评论系统 =====
-     需要在 config 中设置 disqusShortname
-     
-<div id="disqus_thread"></div>
+<div id="tcomment"></div>
+<script src="https://cdn.staticfile.net/twikoo/1.6.41/twikoo.all.min.js"></script>
 <script>
-    var disqus_config = function () {
-        this.page.url = {{ .Permalink }};
-        this.page.identifier = {{ .RelPermalink }};
-    };
-    (function() {
-        var d = document, s = d.createElement('script');
-        s.src = 'https://YOUR-DISQUS-SHORTNAME.disqus.com/embed.js';
-        s.setAttribute('data-timestamp', +new Date());
-        (d.head || d.body).appendChild(s);
-    })();
+twikoo.init({
+  envId: 'https://pl.kkkk24juastin.asia', // 自托管 Twikoo 服务地址
+  el: '#tcomment',
+  path: location.pathname, // 用文章路径区分评论
+  lang: 'zh-CN', // 语言设置
+})
 </script>
-*/}}
 
-{{/* 当前未启用任何评论系统 */}}
-{{/* 要启用评论，请取消上面某个评论系统的注释，并配置相应参数 */}}
+{{/* Twikoo 深色模式自动适配 */}}
+<style>
+  .dark .tk-comments {
+    --twikoo-bg: var(--entry);
+    --twikoo-border: var(--border);
+  }
+</style>
