@@ -24,46 +24,7 @@
 
 {{/* fetchpriority 提示 - 已经由主题的 CSS 预加载处理 */}}
 
-{{/* 图片懒加载脚本 - 使用原生 loading="lazy" 属性 */}}
-<script>
-  // 为所有图片添加懒加载属性和渐显效果
-  document.addEventListener('DOMContentLoaded', function() {
-    // 图片加载完成后添加 loaded 类以显示渐显效果
-    function addLoadedClass(img) {
-      if (img.complete) {
-        img.classList.add('loaded');
-      } else {
-        img.addEventListener('load', function() {
-          img.classList.add('loaded');
-        });
-        img.addEventListener('error', function() {
-          img.classList.add('loaded'); // 加载失败也显示
-        });
-      }
-    }
-    
-    // 为文章内的图片添加懒加载
-    document.querySelectorAll('.post-content img').forEach(function(img) {
-      if (!img.hasAttribute('loading')) {
-        img.setAttribute('loading', 'lazy');
-        img.setAttribute('decoding', 'async');
-      }
-      addLoadedClass(img);
-    });
-    
-    // 为封面图片添加懒加载（首屏封面除外）
-    document.querySelectorAll('.entry-cover img').forEach(function(img, index) {
-      // 首页第一张封面不懒加载
-      if (index > 0) {
-        if (!img.hasAttribute('loading')) {
-          img.setAttribute('loading', 'lazy');
-          img.setAttribute('decoding', 'async');
-        }
-      }
-      addLoadedClass(img);
-    });
-  });
-</script>
+{{/* 图片懒加载脚本已移至 extend_footer.html，避免阻塞首屏渲染 */}}
 
 {{/* ======== 其他自定义设置 ======== */}}
 

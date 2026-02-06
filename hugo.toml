@@ -601,7 +601,7 @@ enableGitInfo = true
     # disableHLJS: 是否禁用 Highlight.js
     # 说明: true = 使用 Hugo 内置的 Chroma 语法高亮
     # 设为 true 时需要配置下方的 [markup.highlight]
-    # disableHLJS = true
+    disableHLJS = true
     
     # disableFingerprinting: 是否禁用资源指纹
     # 说明: false = 为 CSS/JS 添加 hash 后缀, 有助于缓存控制

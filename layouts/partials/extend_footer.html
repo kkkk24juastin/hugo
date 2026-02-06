@@ -3,6 +3,47 @@
      文档: https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#custom-head--footer
 */}}
 
+{{/* 图片懒加载脚本 - 使用原生 loading="lazy" 属性 */}}
+<script>
+  // 为所有图片添加懒加载属性和渐显效果
+  document.addEventListener('DOMContentLoaded', function() {
+    // 图片加载完成后添加 loaded 类以显示渐显效果
+    function addLoadedClass(img) {
+      if (img.complete) {
+        img.classList.add('loaded');
+      } else {
+        img.addEventListener('load', function() {
+          img.classList.add('loaded');
+        });
+        img.addEventListener('error', function() {
+          img.classList.add('loaded'); // 加载失败也显示
+        });
+      }
+    }
+    
+    // 为文章内的图片添加懒加载
+    document.querySelectorAll('.post-content img').forEach(function(img) {
+      if (!img.hasAttribute('loading')) {
+        img.setAttribute('loading', 'lazy');
+        img.setAttribute('decoding', 'async');
+      }
+      addLoadedClass(img);
+    });
+    
+    // 为封面图片添加懒加载（首屏封面除外）
+    document.querySelectorAll('.entry-cover img').forEach(function(img, index) {
+      // 首页第一张封面不懒加载
+      if (index > 0) {
+        if (!img.hasAttribute('loading')) {
+          img.setAttribute('loading', 'lazy');
+          img.setAttribute('decoding', 'async');
+        }
+      }
+      addLoadedClass(img);
+    });
+  });
+</script>
+
 {{/* 可以在这里添加自定义的 JavaScript、统计代码等 */}}
 
 {{/* 示例: 添加自定义 JavaScript */}}

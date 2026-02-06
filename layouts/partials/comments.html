@@ -6,15 +6,14 @@
 */}}
 
 <div id="tcomment"></div>
-<script src="https://jsd.cdn.zzko.cn/npm/twikoo@1.6.41/dist/twikoo.all.min.js"></script>
-<script>
+<script defer src="https://jsd.cdn.zzko.cn/npm/twikoo@1.6.41/dist/twikoo.all.min.js" onload="
 twikoo.init({
-  envId: 'https://pl.kkkk24juastin.asia', // 自托管 Twikoo 服务地址
+  envId: 'https://pl.kkkk24juastin.asia',
   el: '#tcomment',
-  path: location.pathname, // 用文章路径区分评论
-  lang: 'zh-CN', // 语言设置
+  path: location.pathname,
+  lang: 'zh-CN'
 })
-</script>
+"></script>
 
 {{/* Twikoo 深色模式自动适配 */}}
 <style>
