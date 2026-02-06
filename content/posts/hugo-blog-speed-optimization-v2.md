@@ -1,7 +1,7 @@
 ---
 title: "Hugo 博客速度优化实践 V2 - 深度性能分析"
 date: 2026-02-06
-draft: true
+draft: false
 description: "通过实际性能测试，发现博客的核心瓶颈并针对性优化"
 summary: "基于真实性能数据的博客优化方案：TTFB 从 2.28s 优化到 200ms 以下"
 tags: ["Hugo", "性能优化", "Cloudflare", "CDN"]
