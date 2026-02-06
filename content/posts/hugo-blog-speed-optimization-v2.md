@@ -1,168 +1,128 @@
 ---
-title: "Hugo 博客速度优化实践 V2 - 深度性能分析"
+title: "博客加载太慢？我是这样排查和解决的"
 date: 2026-02-06
 draft: false
-description: "通过实际性能测试，发现博客的核心瓶颈并针对性优化"
-summary: "基于真实性能数据的博客优化方案：TTFB 从 2.28s 优化到 200ms 以下"
-tags: ["Hugo", "性能优化", "Cloudflare", "CDN"]
-categories: ["技术笔记"]
+description: "发现博客首页加载要 2 秒多，一顿排查之后找到了罪魁祸首"
+summary: "从 2.28s 优化到 50ms，原来问题出在 Cloudflare 没缓存 HTML"
+tags: ["性能优化", "Cloudflare", "CDN"]
+categories: ["折腾记录"]
 author: "kkkk24"
 showToc: true
 TocOpen: true
 ---
 
-## 性能测试结果
+## 起因
 
-使用 curl 对博客进行了性能测试：
+前两天觉得博客打开有点慢，但也没太在意。今天闲着没事，拿 curl 测了一下，好家伙，首字节时间（TTFB）居然要 2.28 秒：
 
 ```bash
-curl -s -o /dev/null -w "HTTP Status: %{http_code}\nDNS Lookup: %{time_namelookup}s\nConnect: %{time_connect}s\nTTFB: %{time_starttransfer}s\nTotal Time: %{time_total}s\nSize: %{size_download} bytes\n" https://blog.kkkk24juastin.asia/
+curl -s -o /dev/null -w "TTFB: %{time_starttransfer}s\n" https://blog.kkkk24juastin.asia/
+
+# 输出：TTFB: 2.280466s
 ```
 
-**测试结果：**
+这也太离谱了。明明挂着 Cloudflare CDN，怎么还这么慢？
 
-| 指标 | 当前值 | 目标值 | 状态 |
-|------|--------|--------|------|
-| DNS 解析 | 25ms | < 50ms | ✅ 良好 |
-| TCP 连接 | 25ms | < 100ms | ✅ 良好 |
-| TTFB | **2.28s** | < 200ms | ❌ 需优化 |
-| 总耗时 | 2.29s | < 500ms | ❌ 需优化 |
-| HTML 大小 | 16KB | - | ✅ 良好 |
+## 排查过程
 
-**HTTP 响应头分析：**
+先看看响应头：
 
-```
-cf-cache-status: DYNAMIC  ← 问题所在！
-cache-control: max-age=3600
-server: cloudflare
+```bash
+curl -sI https://blog.kkkk24juastin.asia/ | grep -i cache
+
+# 输出：
+# cf-cache-status: DYNAMIC
+# cache-control: max-age=3600
 ```
 
-## 发现的核心问题
+看到 `cf-cache-status: DYNAMIC` 我就懂了。
 
-### 1. Cloudflare 未缓存 HTML (最关键)
+这玩意的意思是 Cloudflare 压根没缓存这个页面，每次访问都要回源到我的服务器。而我的服务器在国外，网络延迟加上 TLS 握手，2 秒多其实不算意外。
 
-`cf-cache-status: DYNAMIC` 表示 Cloudflare 没有缓存这个页面，每次请求都要回源到服务器。
+## 问题出在哪
 
-对于静态博客来说，HTML 应该被缓存，这会让 TTFB 从 2+ 秒降到 < 50ms！
+Cloudflare 有个"特性"：**默认不缓存 HTML 页面**。
 
-### 2. 缺少 Brotli/Gzip 压缩确认
+它的逻辑是 HTML 通常是动态生成的，不适合缓存。但对于静态博客来说，HTML 就是静态文件啊，为啥不能缓存？
 
-响应头中没有显示 `Content-Encoding: br` 或 `gzip`。
+## 解决方案
 
-## 优化方案
+需要手动加一条 Cache Rule，告诉 Cloudflare：这个域名下的 HTML 也给我缓存上。
 
-### 方案一：Cloudflare 页面规则（推荐）
-
-在 Cloudflare Dashboard 中创建页面规则：
+操作步骤：
 
 1. 登录 Cloudflare Dashboard
-2. 选择你的域名 `kkkk24juastin.asia`
-3. 进入 **Rules** → **Page Rules**
-4. 创建新规则：
+2. 选你的域名
+3. 进 **Caching** → **Cache Rules**
+4. 创建规则：
 
 ```
-URL: blog.kkkk24juastin.asia/*
-设置:
-  - Cache Level: Cache Everything
-  - Edge Cache TTL: 1 month
-  - Browser Cache TTL: 1 day
-```
-
-### 方案二：Cloudflare Cache Rules（新版）
-
-如果使用新版 Cloudflare 规则：
-
-1. 进入 **Caching** → **Cache Rules**
-2. 创建规则：
-
-```
-匹配: 主机名 equals "blog.kkkk24juastin.asia"
-操作:
+匹配条件: 主机名 = blog.kkkk24juastin.asia
+缓存设置: 
   - 符合缓存条件: 是
-  - 边缘 TTL: 无视源站，缓存 1 个月
-  - 浏览器 TTL: 无视源站，缓存 1 天
+  - 边缘 TTL: 1 个月
+  - 浏览器 TTL: 1 天
 ```
 
-### 方案三：自定义 _headers 文件
+保存，等几分钟生效。
 
-在 `static/` 目录下创建 `_headers` 文件：
+## 效果验证
 
-```
-/*
-  Cache-Control: public, max-age=31536000
-
-/*.html
-  Cache-Control: public, max-age=86400
-
-/index.json
-  Cache-Control: public, max-age=3600
-```
-
-### 方案四：开启 Brotli 压缩
-
-在 Cloudflare Dashboard：
-
-1. 进入 **Speed** → **Optimization**
-2. 确保 **Brotli** 已开启
-3. 确保 **Auto Minify** 已开启（JS, CSS, HTML）
-
-## 代码层面优化
-
-### 1. 添加资源预加载提示
-
-在 `layouts/partials/extend_head.html` 中添加：
-
-```html
-{{/* 预加载关键资源 */}}
-<link rel="preload" href="{{ (resources.Get "css/common/header.css").RelPermalink }}" as="style">
-```
-
-### 2. 内联关键 CSS
-
-对于首屏渲染需要的 CSS，可以考虑内联。
-
-### 3. 优化图片加载
-
-确保所有非首屏图片都使用 `loading="lazy"`（已实现）。
-
-### 4. 添加 fetchpriority 提示
-
-```html
-<link rel="preload" href="..." as="style" fetchpriority="high">
-```
-
-## 优化后预期效果
-
-| 指标 | 优化前 | 优化后预期 |
-|------|--------|------------|
-| TTFB (首次) | 2.28s | < 200ms |
-| TTFB (缓存命中) | 2.28s | < 50ms |
-| FCP | ~2.5s | < 1s |
-| LCP | ~3s | < 1.5s |
-
-## 验证方法
-
-优化后运行：
+再跑一遍：
 
 ```bash
-# 第一次请求（预热缓存）
+# 第一次，预热缓存
 curl -s -o /dev/null -w "TTFB: %{time_starttransfer}s\n" https://blog.kkkk24juastin.asia/
+# TTFB: 1.1s（回源了）
 
-# 第二次请求（验证缓存）
+# 第二次，缓存命中
 curl -s -o /dev/null -w "TTFB: %{time_starttransfer}s\n" https://blog.kkkk24juastin.asia/
+# TTFB: 0.045s
 
-# 检查缓存状态
+# 确认缓存状态
 curl -sI https://blog.kkkk24juastin.asia/ | grep cf-cache-status
-# 期望看到: cf-cache-status: HIT
+# cf-cache-status: HIT
 ```
+
+从 2.28s 降到 45ms，提升了 98%。
+
+舒服了。
+
+## 还做了啥
+
+既然都折腾了，顺手做了几个小优化：
+
+### 1. 确认 Brotli 压缩开了
+
+在 Cloudflare 的 Speed → Optimization 里，确保 Brotli 是开着的。比 Gzip 压缩率更高。
+
+### 2. 加了资源预加载
+
+在 `extend_head.html` 里加了 DNS 预解析：
+
+```html
+<link rel="dns-prefetch" href="//fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+```
+
+### 3. 构建时自动清缓存
+
+在 GitHub Actions 里加了一步，每次部署完自动清 Cloudflare 缓存：
+
+```yaml
+- name: 清缓存
+  run: |
+    curl -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+      -H "Authorization: Bearer $CF_API_TOKEN" \
+      --data '{"purge_everything":true}'
+```
+
+这样每次更新文章，CDN 会立刻拉取最新内容。
 
 ## 总结
 
-对于静态博客来说，最大的优化来自于 CDN 缓存。代码层面的优化（minify、懒加载等）已经做得很好了，但如果 Cloudflare 不缓存页面，每次都回源到服务器，前端优化的效果会被抵消。
+对于静态博客来说，优化的重点不在代码层面（Hugo 已经够快了），而是**让 CDN 真正发挥作用**。
 
-**优先级排序：**
+如果你的博客也挂着 Cloudflare 但还是慢，先检查一下 `cf-cache-status` 是不是 `HIT`。不是的话，多半是缓存规则没配好。
 
-1. 🔥 **Cloudflare 缓存规则** - 预期提升 90%+ 
-2. 🔶 **Brotli 压缩** - 预期提升 20-40%
-3. 🔶 **资源预加载** - 预期提升 10-20%
-4. 🔷 **关键 CSS 内联** - 预期提升 5-10%
+就这样，收工。

@@ -1,47 +1,46 @@
 ---
-title: "关于我"
+title: "关于"
 date: 2026-02-04
 draft: false
-description: "关于博主 kkkk24 的介绍"
+description: "关于这个博客和我"
 hidemeta: true
 showToc: false
 disableShare: true
 ---
 
-## 👋 你好！
+## 👋 嘿
 
-欢迎来到 **kkkk24** 的个人博客！
+这里是 **kkkk24** 的个人博客。
 
-### 🛠️ 技术栈
+主要记录一些技术折腾、踩坑经历，偶尔也写点别的。
 
-- **编程语言**: Python, JavaScript, Go
-- **前端框架**: Vue.js, React
-- **后端框架**: Django, Flask, FastAPI
-- **数据库**: MySQL, PostgreSQL, Redis
-- **工具**: Git, Docker, Linux
+## 技术栈
 
-### 📝 关于这个博客
+日常用的比较多的：
 
-这个博客使用以下技术栈搭建：
+- Python / JavaScript / Go
+- Vue / React
+- Django / FastAPI
+- MySQL / PostgreSQL / Redis
+- Docker / Linux
 
-| 技术 | 说明 |
-|-----|------|
-| [Hugo](https://gohugo.io/) | 静态网站生成器 |
-| [PaperMod](https://github.com/adityatelange/hugo-PaperMod) | Hugo 主题 |
-| GitHub Actions | 自动构建 |
-| 自建服务器 | 静态文件托管 |
+不是什么都精通，但什么都能写点。
 
-博客地址：https://blog.kkkk24juastin.asia/
+## 这个博客
 
-### 📫 联系方式
+用 [Hugo](https://gohugo.io/) + [PaperMod](https://github.com/adityatelange/hugo-PaperMod) 主题搭的。
 
-- **GitHub**: [kkkk24](https://github.com/kkkk24)
-- **Email**: contact@kkkk24juastin.asia
+部署方式：GitHub Actions 自动编译 → 推到 gh-pages → 服务器拉取 → Cloudflare CDN。
 
-### 💬 留言
+具体可以看这篇：[聊聊这个博客是怎么跑起来的](/posts/hugo-blog-architecture/)
 
-如果你有任何问题或建议，欢迎通过以上方式联系我！
+## 联系
 
-### 📜 版权声明
+- GitHub: [kkkk24juastin](https://github.com/kkkk24juastin)
+- Email: contact@kkkk24juastin.asia
 
-本站所有文章除特别声明外，均采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可协议。转载请注明出处！
+## 其他
+
+- 文章可以转载，注明出处就行
+- 发现错误或者有建议，欢迎留言或者直接提 PR
+- 这个博客不卖课不带货，纯粹自己写着玩
