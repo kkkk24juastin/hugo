@@ -8,10 +8,21 @@
 {{/* DNS 预解析 - 加速外部资源加载 (针对中国大陆优化) */}}
 <link rel="dns-prefetch" href="//jsd.cdn.zzko.cn">
 <link rel="dns-prefetch" href="//pl.kkkk24juastin.asia">
+<link rel="dns-prefetch" href="//cubism.live2d.com">
 
 {{/* 预连接 - 提前建立 Twikoo 评论和 CDN 连接 */}}
 <link rel="preconnect" href="https://jsd.cdn.zzko.cn" crossorigin>
 <link rel="preconnect" href="https://pl.kkkk24juastin.asia" crossorigin>
+
+{{/* 资源优先级提示 - 告诉浏览器优先加载关键资源 */}}
+{{/* 首页和列表页预取下一页 */}}
+{{ if .IsHome }}
+{{ range first 3 (where .Site.RegularPages "Type" "posts") }}
+<link rel="prefetch" href="{{ .RelPermalink }}" as="document">
+{{ end }}
+{{ end }}
+
+{{/* fetchpriority 提示 - 已经由主题的 CSS 预加载处理 */}}
 
 {{/* 图片懒加载脚本 - 使用原生 loading="lazy" 属性 */}}
 <script>
