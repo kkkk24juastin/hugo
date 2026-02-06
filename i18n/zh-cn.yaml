@@ -1,0 +1,51 @@
+# 中文翻译 - 覆盖主题默认翻译
+# 用于显示中文的分类和标签页面标题
+
+- id: prev_page
+  translation: "上一页"
+
+- id: next_page
+  translation: "下一页"
+
+- id: read_time
+  translation:
+    one : "1 分钟"
+    other: "{{ .Count }} 分钟"
+
+- id: words
+  translation: 
+    one: "字"
+    other: "{{ .Count }} 字"
+
+- id: toc
+  translation: "目录"
+
+- id: translations
+  translation: "语言"
+
+- id: home
+  translation: "主页"
+
+- id: edit_post
+  translation: "编辑"
+
+- id: code_copy
+  translation: "复制"
+
+- id: code_copied
+  translation: "已复制！"
+
+- id: search_placeholder
+  translation: "搜索"
+
+- id: posts
+  translation: "文章"
+
+- id: share_on
+  translation: "分享到"
+
+- id: search_results_for
+  translation: "搜索结果"
+
+- id: no_results_for
+  translation: "没有找到相关结果"
