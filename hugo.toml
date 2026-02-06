@@ -673,11 +673,11 @@ enableGitInfo = true
   [params.editPost]
     # URL: 编辑链接的基础 URL
     # 说明: 应指向仓库的 content 目录
-    # GitHub 格式: https://github.com/用户名/仓库名/edit/分支名/content
-    URL = "https://github.com/kkkk24/hugo/edit/main/content"
+    # GitHub 格式: https://github.com/用户名/仓库名/tree/分支名/content
+    URL = "https://github.com/kkkk24juastin/hugo/tree/main/content"
     
     # Text: 显示的链接文字
-    Text = "建议修改"
+    Text = "提交建议"
     
     # appendFilePath: 是否自动追加文件路径
     # 说明: true = 自动追加如 "/posts/my-post.md" 到 URL 后
