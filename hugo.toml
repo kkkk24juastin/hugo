@@ -333,7 +333,7 @@ enableGitInfo = true
   
   # ShowShareButtons: 是否显示分享按钮
   # 说明: true = 在文章底部显示社交分享按钮
-  ShowShareButtons = true
+  ShowShareButtons = false
   
   # ShowPostNavLinks: 是否显示上一篇/下一篇导航
   # 说明: true = 在文章底部显示 "上一篇" 和 "下一篇" 链接
